@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.database import engine, Base
-from api import projects, pipelines, manifests
+from api import projects, pipelines, manifests, assets
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
