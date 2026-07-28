@@ -23,9 +23,9 @@ function PipelineInspector() {
   const [logs, setLogs] = useState<LogEvent[]>([]);
 
   const steps = [
-    { title: "Image", model: "nano-banana-pro-preview", provider: "Google (Custom)" },
-    { title: "Video", model: "veo-3.1-generate-preview", provider: "Google (Custom)" },
-    { title: "Manifest & B2 Storage", model: "Genblaze SDK", provider: "Backblaze" }
+    { title: "Image", model: "nano-banana-pro-preview", provider: "Google (Custom)", skipped: false },
+    { title: "Video", model: "veo-3.1-generate-preview", provider: "Google (Custom)", skipped: true },
+    { title: "Manifest & B2 Storage", model: "Genblaze SDK", provider: "Backblaze", skipped: false }
   ];
 
   // Connecting to the Real FastAPI SSE Stream & Initial DB Fetch
@@ -126,15 +126,27 @@ function PipelineInspector() {
             return (
               <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 bg-background shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow transition-colors ${
-                  isCompleted ? "border-green-500 bg-green-500/10" : isActive ? "border-violet-500 bg-violet-500/20 glow-active animate-pulse" : "border-zinc-800"
+                  step.skipped ? "border-zinc-700 bg-zinc-800/40" : isCompleted ? "border-green-500 bg-green-500/10" : isActive ? "border-violet-500 bg-violet-500/20 glow-active animate-pulse" : "border-zinc-800"
                 }`}>
-                  {isCompleted ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : isActive ? <Loader2 className="w-5 h-5 text-violet-500 animate-spin" /> : <Circle className="w-5 h-5 text-zinc-700" />}
+                  {step.skipped ? (
+                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                  ) : isCompleted ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  ) : isActive ? (
+                    <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-zinc-700" />
+                  )}
                 </div>
 
                 <Card className={`glass-card w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 transition-all ${isActive ? 'border-violet-500/50' : 'border-white/5'}`}>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-lg">{step.title}</h3>
-                    {isCompleted && <Badge variant="secondary" className="bg-green-500/20 text-green-300">Done</Badge>}
+                    {step.skipped ? (
+                      <Badge variant="outline" className="text-zinc-400 border-zinc-700">Skipped</Badge>
+                    ) : isCompleted ? (
+                      <Badge variant="secondary" className="bg-green-500/20 text-green-300">Done</Badge>
+                    ) : null}
                   </div>
                   <p className="text-sm text-muted-foreground font-mono">{step.model}</p>
                 </Card>
@@ -196,32 +208,44 @@ function PipelineInspector() {
                         Nano Banana Pro
                       </Badge>
                     </div>
-                    <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video bg-zinc-900 group">
+                    <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video bg-zinc-900 group flex items-center justify-center">
                       <img 
-                        src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" 
-                        alt="Generated Output"
+                        src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/assets/${id}/image`} 
+                        alt="Generated AI Output"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-zinc-300 font-mono border border-white/10">
                         B2 Synced
                       </div>
                     </div>
+                    <div className="flex justify-end">
+                      <a 
+                        href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/assets/${id}/image`}
+                        download={`generated-${id}.png`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <Button size="sm" variant="outline" className="text-xs gap-1.5 glass-card">
+                          <Download className="w-3.5 h-3.5" /> Download Image
+                        </Button>
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Video Output Card / Skipped Badge */}
+                  {/* Video Output Card / Neutral Skipped State */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold text-zinc-200">Video Pipeline</span>
-                      <Badge variant="outline" className="text-zinc-400 border-zinc-700 font-mono text-xs">
-                        Fast Demo Mode
+                      <span className="font-semibold text-zinc-400">Video Pipeline</span>
+                      <Badge variant="outline" className="text-zinc-500 border-zinc-800 font-mono text-xs">
+                        Skipped
                       </Badge>
                     </div>
-                    <div className="rounded-xl border border-white/10 aspect-video bg-zinc-900/60 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="rounded-xl border border-white/5 aspect-video bg-black/40 flex flex-col items-center justify-center p-6 text-center">
                       <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
                       </div>
-                      <p className="text-sm font-medium text-zinc-300">Image Pipeline Completed</p>
-                      <p className="text-xs text-zinc-500 mt-1 max-w-xs">Video step skipped for fast 5-second demo generation.</p>
+                      <p className="text-sm font-medium text-zinc-400">Video Step Skipped</p>
+                      <p className="text-xs text-zinc-600 mt-1 max-w-xs">Disabled for fast 5-second demo pipeline generation.</p>
                     </div>
                   </div>
                 </div>
