@@ -30,6 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def log_requests(request, call_next):
+    print(f"[{request.method}] {request.url.path}")
+    response = await call_next(request)
+    print(f"-> Status {response.status_code}")
+    return response
+
 # Include Routers
 app.include_router(projects.router, prefix=settings.API_V1_STR)
 app.include_router(pipelines.router, prefix=settings.API_V1_STR)
