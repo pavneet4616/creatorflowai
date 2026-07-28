@@ -14,10 +14,17 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-# CORS Middleware for Cloudflare Worker & Frontend access
+# CORS Middleware for Cloudflare Worker & Hostinger Frontend access
+origins = [
+    "https://lightgray-gnat-186819.hostingersite.com",
+    "http://localhost:3000",
+    "http://localhost:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict to Worker domain
+    allow_origins=origins,
+    allow_origin_regex=r"https://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
