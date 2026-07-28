@@ -1,0 +1,19 @@
+# Backend (Python)
+backend/venv/
+backend/__pycache__/
+backend/.env
+backend/creatorflow.db
+*.pyc
+
+# Frontend (Node.js/Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+*.log
+
+# Worker
+worker/node_modules/
+
+# OS/IDE
+.DS_Store
+.vscode/
