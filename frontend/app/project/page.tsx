@@ -21,10 +21,11 @@ function PipelineInspector() {
   const [status, setStatus] = useState("IN_PROGRESS");
   const [currentStep, setCurrentStep] = useState(0);
   const [logs, setLogs] = useState<LogEvent[]>([]);
+  const [isVideoSkipped, setIsVideoSkipped] = useState(true);
 
   const steps = [
     { title: "Image", model: "nano-banana-pro-preview", provider: "Google (Custom)", skipped: false },
-    { title: "Video", model: "veo-3.1-generate-preview", provider: "Google (Custom)", skipped: true },
+    { title: "Video", model: "veo-3.1-generate-preview", provider: "Google (Custom)", skipped: isVideoSkipped },
     { title: "Manifest & B2 Storage", model: "Genblaze SDK", provider: "Backblaze", skipped: false }
   ];
 
@@ -43,6 +44,9 @@ function PipelineInspector() {
       .then(res => res.ok ? res.json() : null)
       .then(run => {
         if (run) {
+          const hasVideo = run.config?.steps?.some((s: any) => s.provider === "google-genai-video" || (s.model && s.model.includes("veo")));
+          setIsVideoSkipped(!hasVideo);
+
           if (run.status === "COMPLETED") {
             setStatus("COMPLETED");
             setCurrentStep(steps.length);
@@ -235,18 +239,51 @@ function PipelineInspector() {
                   {/* Video Output Card / Neutral Skipped State */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold text-zinc-400">Video Pipeline</span>
-                      <Badge variant="outline" className="text-zinc-500 border-zinc-800 font-mono text-xs">
-                        Skipped
-                      </Badge>
+                      <span className={`font-semibold ${isVideoSkipped ? "text-zinc-400" : "text-zinc-200"}`}>Generated Video</span>
+                      {isVideoSkipped ? (
+                        <Badge variant="outline" className="text-zinc-500 border-zinc-800 font-mono text-xs">
+                          Skipped
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-violet-400 border-violet-500/30 font-mono text-xs">
+                          Veo 3.1
+                        </Badge>
+                      )}
                     </div>
-                    <div className="rounded-xl border border-white/5 aspect-video bg-black/40 flex flex-col items-center justify-center p-6 text-center">
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3">
-                        <span className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                    {isVideoSkipped ? (
+                      <div className="rounded-xl border border-white/5 aspect-video bg-black/40 flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                          <span className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                        </div>
+                        <p className="text-sm font-medium text-zinc-400">Video Step Skipped</p>
+                        <p className="text-xs text-zinc-600 mt-1 max-w-xs">Disabled for fast 5-second demo pipeline generation.</p>
                       </div>
-                      <p className="text-sm font-medium text-zinc-400">Video Step Skipped</p>
-                      <p className="text-xs text-zinc-600 mt-1 max-w-xs">Disabled for fast 5-second demo pipeline generation.</p>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video bg-zinc-900 group">
+                          <video 
+                            controls
+                            src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/assets/${id}/video`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] text-zinc-300 font-mono border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                            B2 Synced
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          <a 
+                            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/assets/${id}/video`}
+                            download={`generated-video-${id}.mp4`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Button size="sm" variant="outline" className="text-xs gap-1.5 glass-card">
+                              <Download className="w-3.5 h-3.5" /> Download Video
+                            </Button>
+                          </a>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
