@@ -6,7 +6,27 @@ import { Plus, LayoutGrid, Clock, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
+import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronRight } from "lucide-react";
+
 export default function DashboardPage() {
+  const [runs, setRuns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    fetch(`${apiBase}/api/v1/pipelines`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setRuns(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen p-8 md:p-12 relative overflow-hidden bg-background">
       <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-violet-600/10 blur-[100px] rounded-full pointer-events-none" />
@@ -64,17 +84,40 @@ export default function DashboardPage() {
 
         <section className="mt-16">
           <h2 className="text-2xl font-semibold mb-6">Recent Activity</h2>
-          <Card className="glass-card border-dashed border-white/10">
-            <CardContent className="p-12 text-center flex flex-col items-center justify-center gap-4">
-              <p className="text-lg text-zinc-300 font-medium">No workflows yet.</p>
-              <p className="text-sm text-muted-foreground max-w-sm">Create your first AI pipeline to generate media and track outputs.</p>
-              <Link href="/projects/new" className="mt-2">
-                <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-md shadow-violet-500/20 transition-all gap-2 px-6">
-                  <Plus className="w-4 h-4" /> Create First Workflow
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+          {runs.length > 0 ? (
+            <div className="space-y-4">
+              {runs.slice(0, 3).map((run) => (
+                <Card key={run.id} className="glass-card hover:border-white/20 transition-all p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-sm text-violet-400">{run.id}</span>
+                        <Badge className="bg-emerald-500/20 text-emerald-400">{run.status || "COMPLETED"}</Badge>
+                      </div>
+                      <p className="text-sm font-medium text-zinc-200">{run.prompt}</p>
+                    </div>
+                    <Link href={`/project?id=${run.id}`}>
+                      <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                        Inspect <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="glass-card border-dashed border-white/10">
+              <CardContent className="p-12 text-center flex flex-col items-center justify-center gap-4">
+                <p className="text-lg text-zinc-300 font-medium">No workflows yet.</p>
+                <p className="text-sm text-muted-foreground max-w-sm">Create your first AI pipeline to generate media and track outputs.</p>
+                <Link href="/projects/new" className="mt-2">
+                  <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-md shadow-violet-500/20 transition-all gap-2 px-6">
+                    <Plus className="w-4 h-4" /> Create First Workflow
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </section>
       </div>
     </div>

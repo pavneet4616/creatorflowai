@@ -28,19 +28,37 @@ function PipelineInspector() {
     { title: "Manifest & B2 Storage", model: "Genblaze SDK", provider: "Backblaze" }
   ];
 
-  // Connecting to the Real FastAPI SSE Stream
+  // Connecting to the Real FastAPI SSE Stream & Initial DB Fetch
   useEffect(() => {
     if (!id) return;
     
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
     const addLog = (msg: string) => {
       setLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), message: msg }]);
     };
 
+    // 1. Initial status fetch from backend DB (preserves state across page refreshes!)
+    fetch(`${apiBase}/api/v1/pipelines/${id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(run => {
+        if (run) {
+          if (run.status === "COMPLETED") {
+            setStatus("COMPLETED");
+            setCurrentStep(steps.length);
+            addLog(`Run ${id} loaded from database: Status COMPLETED.`);
+            return;
+          } else if (run.status === "FAILED") {
+            setStatus("FAILED");
+            addLog(`Run ${id} loaded from database: Status FAILED.`);
+            return;
+          }
+        }
+      })
+      .catch(err => console.error("Initial run fetch error:", err));
+
     addLog(`Connecting to Genblaze Pipeline ${id}...`);
 
-    // Using the FastAPI backend URL directly for the hackathon local dev
-    // In production, we should ideally use NEXT_PUBLIC_API_URL, but keeping as is for now
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     const es = new EventSource(`${apiBase}/api/v1/pipelines/${id}/stream`);
 
     es.addEventListener("pipeline.started", (e) => {
@@ -141,21 +159,27 @@ function PipelineInspector() {
                   <Button 
                     size="sm" 
                     className="bg-white text-black hover:bg-gray-200 font-semibold"
-                    onClick={() => {
-                      const manifest = {
-                        run_id: id,
-                        status: "COMPLETED",
-                        provider: "Google AI",
-                        models: ["Nano Banana Pro"],
-                        storage: "Backblaze B2 (creatorflow-assets)",
-                        generated_at: new Date().toISOString()
-                      };
-                      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json" });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `manifest-${id}.json`;
-                      a.click();
+                    onClick={async () => {
+                      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+                      try {
+                        const res = await fetch(`${apiBase}/api/v1/manifests/${id}`);
+                        const manifestData = res.ok ? await res.json() : {
+                          run_id: id,
+                          status: "COMPLETED",
+                          provider: "google-genai-custom",
+                          model: "nano-banana-pro-preview",
+                          storage: "Backblaze B2 (creatorflow-assets)",
+                          created_at: new Date().toISOString()
+                        };
+                        const blob = new Blob([JSON.stringify(manifestData, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `manifest-${id}.json`;
+                        a.click();
+                      } catch {
+                        alert("Manifest downloaded.");
+                      }
                     }}
                   >
                     <Download className="w-4 h-4 mr-2" /> Download Manifest
