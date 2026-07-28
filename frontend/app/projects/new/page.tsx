@@ -13,11 +13,10 @@ export default function NewProjectPage() {
   const [prompt, setPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Default config matching the actual Genblaze SDK Google Provider capabilities
-  // Video disabled by default so generation finishes in 5-10 seconds for fast demo runs
+  // Default config enabling both Image (Nano Banana Pro) and Video (Veo 3.1) models
   const [config, setConfig] = useState([
     { type: "image", enabled: true, provider: "google-genai", model: "Nano Banana Pro", icon: ImageIcon },
-    { type: "video", enabled: false, provider: "google-genai", model: "Veo 3.1 Preview", icon: Video },
+    { type: "video", enabled: true, provider: "google-genai", model: "Veo 3.1 Preview", icon: Video },
   ]);
 
   const toggleStep = (index: number) => {

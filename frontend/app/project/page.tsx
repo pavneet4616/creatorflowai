@@ -21,7 +21,7 @@ function PipelineInspector() {
   const [status, setStatus] = useState("IN_PROGRESS");
   const [currentStep, setCurrentStep] = useState(0);
   const [logs, setLogs] = useState<LogEvent[]>([]);
-  const [isVideoSkipped, setIsVideoSkipped] = useState(true);
+  const [isVideoSkipped, setIsVideoSkipped] = useState(false);
 
   const steps = [
     { title: "Image", model: "nano-banana-pro-preview", provider: "Google (Custom)", skipped: false },
@@ -44,7 +44,7 @@ function PipelineInspector() {
       .then(res => res.ok ? res.json() : null)
       .then(run => {
         if (run) {
-          const hasVideo = run.config?.steps?.some((s: any) => s.provider === "google-genai-video" || (s.model && s.model.includes("veo")));
+          const hasVideo = run.config?.steps ? run.config.steps.some((s: any) => s.type === "video" || s.provider === "google-genai-video" || (s.model && s.model.includes("veo"))) : true;
           setIsVideoSkipped(!hasVideo);
 
           if (run.status === "COMPLETED") {
