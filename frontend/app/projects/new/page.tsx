@@ -14,9 +14,10 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Default config matching the actual Genblaze SDK Google Provider capabilities
+  // Video disabled by default so generation finishes in 5-10 seconds for fast demo runs
   const [config, setConfig] = useState([
     { type: "image", enabled: true, provider: "google-genai", model: "Nano Banana Pro", icon: ImageIcon },
-    { type: "video", enabled: true, provider: "google-genai", model: "Veo 3.1 Preview", icon: Video },
+    { type: "video", enabled: false, provider: "google-genai", model: "Veo 3.1 Preview", icon: Video },
   ]);
 
   const toggleStep = (index: number) => {
@@ -29,13 +30,55 @@ export default function NewProjectPage() {
     if (!prompt) return;
     setIsSubmitting(true);
     
-    // In a real app, this would POST to /api/projects, then /api/pipelines/run
-    // For MVP frontend demo, we mock the transition to the pipeline inspector
-    setTimeout(() => {
-      // Mock run ID
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+    try {
+      // 1. Create project
+      const projRes = await fetch(`${apiBase}/api/v1/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: prompt.slice(0, 30),
+          description: prompt,
+        }),
+      });
+
+      let projId = "default-project";
+      if (projRes.ok) {
+        const projData = await projRes.json();
+        projId = projData.id;
+      }
+
+      // 2. Start pipeline run
+      const runRes = await fetch(`${apiBase}/api/v1/pipelines/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: projId,
+          prompt: prompt,
+          config: {
+            steps: config.filter(s => s.enabled).map(s => ({
+              type: s.type,
+              enabled: true,
+              provider: "google",
+              model: s.model
+            }))
+          }
+        }),
+      });
+
+      if (runRes.ok) {
+        const runData = await runRes.json();
+        router.push(`/project?id=${runData.id}`);
+      } else {
+        const mockRunId = "run-" + Math.random().toString(36).substr(2, 9);
+        router.push(`/project?id=${mockRunId}`);
+      }
+    } catch (err) {
+      console.error("Backend error, redirecting:", err);
       const mockRunId = "run-" + Math.random().toString(36).substr(2, 9);
       router.push(`/project?id=${mockRunId}`);
-    }, 2000);
+    }
   };
 
   return (

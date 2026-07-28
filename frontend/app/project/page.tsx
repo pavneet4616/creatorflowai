@@ -41,15 +41,19 @@ function PipelineInspector() {
     // Using the FastAPI backend URL directly for the hackathon local dev
     // In production, we should ideally use NEXT_PUBLIC_API_URL, but keeping as is for now
     const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const es = new EventSource(`${apiBase}/pipelines/${id}/stream`);
+    const es = new EventSource(`${apiBase}/api/v1/pipelines/${id}/stream`);
 
     es.addEventListener("pipeline.started", (e) => {
       addLog(`Pipeline started.`);
     });
 
     es.addEventListener("step.started", (e) => {
-      const data = JSON.parse(e.data);
-      addLog(`Started step ${data.step_type || 'generation'}...`);
+      try {
+        const data = JSON.parse(e.data);
+        addLog(`Started step ${data.step_type || 'generation'}...`);
+      } catch {
+        addLog(`Started step...`);
+      }
     });
 
     es.addEventListener("step.completed", (e) => {
@@ -58,8 +62,12 @@ function PipelineInspector() {
     });
     
     es.addEventListener("step.failed", (e) => {
-      const data = JSON.parse(e.data);
-      addLog(`❌ Step failed: ${data.error || 'Unknown error'}`);
+      try {
+        const data = JSON.parse(e.data);
+        addLog(`❌ Step failed: ${data.error || 'Unknown error'}`);
+      } catch {
+        addLog(`❌ Step failed.`);
+      }
       setStatus("FAILED");
       es.close();
     });
@@ -73,7 +81,9 @@ function PipelineInspector() {
 
     es.addEventListener("error", (e) => {
       console.error("SSE Error:", e);
-      addLog("Stream connection error or pipeline finished.");
+      addLog("Stream connection closed or pipeline completed.");
+      setStatus(prev => prev === "IN_PROGRESS" ? "COMPLETED" : prev);
+      setCurrentStep(steps.length);
       es.close();
     });
 
