@@ -32,16 +32,26 @@ export default function LandingPage() {
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex space-x-4"
+          className="flex flex-col items-center gap-10"
         >
           <Link href="/dashboard">
-            <Button size="lg" className="h-14 px-8 text-lg rounded-full glass-card hover:bg-white/10 transition-all border border-white/20">
+            <Button size="lg" className="h-14 px-10 text-lg rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-violet-500/25 transition-all">
               Go to Dashboard
             </Button>
           </Link>
+
+          {/* Powered By Trust Row */}
+          <div className="pt-8 flex items-center gap-3 text-xs uppercase tracking-widest text-zinc-500 font-mono border-t border-white/5">
+            <span>Powered by</span>
+            <span className="text-zinc-300 font-semibold">Genblaze SDK</span>
+            <span>•</span>
+            <span className="text-zinc-300 font-semibold">Google AI</span>
+            <span>•</span>
+            <span className="text-zinc-300 font-semibold">Backblaze B2</span>
+          </div>
         </motion.div>
       </main>
     </div>

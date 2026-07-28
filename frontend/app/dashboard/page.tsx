@@ -18,15 +18,15 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mt-2">Welcome back to CreatorFlow AI.</p>
           </div>
           <Link href="/projects/new">
-            <Button className="glass hover:bg-white/10 gap-2">
+            <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-md shadow-violet-500/20 transition-all gap-2 px-5">
               <Plus className="w-4 h-4" /> New Project
             </Button>
           </Link>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Link href="/projects">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Link href="/history">
               <Card className="glass-card hover:border-white/20 transition-all cursor-pointer h-full">
                 <CardHeader>
                   <LayoutGrid className="w-8 h-8 mb-4 text-violet-400" />
@@ -37,7 +37,7 @@ export default function DashboardPage() {
             </Link>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Link href="/history">
               <Card className="glass-card hover:border-white/20 transition-all cursor-pointer h-full">
                 <CardHeader>
@@ -49,7 +49,7 @@ export default function DashboardPage() {
             </Link>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Link href="/settings">
               <Card className="glass-card hover:border-white/20 transition-all cursor-pointer h-full">
                 <CardHeader>
@@ -64,9 +64,15 @@ export default function DashboardPage() {
 
         <section className="mt-16">
           <h2 className="text-2xl font-semibold mb-6">Recent Activity</h2>
-          <Card className="glass-card">
-            <CardContent className="p-8 text-center text-muted-foreground">
-              No recent pipeline runs. Create a new project to get started!
+          <Card className="glass-card border-dashed border-white/10">
+            <CardContent className="p-12 text-center flex flex-col items-center justify-center gap-4">
+              <p className="text-lg text-zinc-300 font-medium">No workflows yet.</p>
+              <p className="text-sm text-muted-foreground max-w-sm">Create your first AI pipeline to generate media and track outputs.</p>
+              <Link href="/projects/new" className="mt-2">
+                <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold shadow-md shadow-violet-500/20 transition-all gap-2 px-6">
+                  <Plus className="w-4 h-4" /> Create First Workflow
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </section>

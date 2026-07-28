@@ -22,17 +22,21 @@ class GenblazeService:
                 continue
 
             step_type = step_cfg.get("type")
+            raw_model = str(step_cfg.get("model", "")).lower()
+
             if step_type == "image":
+                model_id = "nano-banana-pro-preview" if ("banana" in raw_model or "nano" in raw_model or not raw_model) else step_cfg.get("model")
                 pipeline = pipeline.step(
                     provider=GoogleProvider(api_key=settings.GOOGLE_API_KEY),
-                    model=step_cfg.get("model", "nano-banana-pro-preview"),
+                    model=model_id,
                     prompt=prompt,
                     modality=Modality.IMAGE
                 )
             elif step_type == "video":
+                model_id = "veo-3.1-generate-preview" if ("veo" in raw_model or not raw_model) else step_cfg.get("model")
                 pipeline = pipeline.step(
                     provider=GoogleProvider(api_key=settings.GOOGLE_API_KEY),
-                    model=step_cfg.get("model", "veo-3.1-generate-preview"),
+                    model=model_id,
                     prompt=prompt,
                     modality=Modality.VIDEO
                 )
