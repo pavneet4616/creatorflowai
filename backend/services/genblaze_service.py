@@ -5,7 +5,7 @@ from core.config import settings
 
 from genblaze_core import Pipeline, Modality, ObjectStorageSink, KeyStrategy
 from genblaze_s3 import S3StorageBackend
-from backend.providers.google_genai_provider import GoogleProvider
+from providers.google_genai_provider import GoogleProvider
 
 class GenblazeService:
     def _build_sink(self) -> ObjectStorageSink:

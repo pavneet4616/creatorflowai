@@ -6,7 +6,7 @@ load_dotenv()
 
 from genblaze_core import Pipeline, KeyStrategy, Modality, ObjectStorageSink
 from genblaze_s3 import S3StorageBackend
-from backend.providers.google_genai_provider import GoogleProvider
+from providers.google_genai_provider import GoogleProvider
 
 async def test_pipe():
     try:
