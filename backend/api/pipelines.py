@@ -26,6 +26,10 @@ def create_pipeline_run(run_in: PipelineRunCreate, db: Session = Depends(get_db)
     db.refresh(db_run)
     return db_run
 
+@router.get("", response_model=List[PipelineRunResponse])
+def get_pipeline_runs(db: Session = Depends(get_db)):
+    return db.query(PipelineRun).order_by(PipelineRun.created_at.desc()).all()
+
 @router.get("/{run_id}", response_model=PipelineRunResponse)
 def get_pipeline_run(run_id: str, db: Session = Depends(get_db)):
     run = db.query(PipelineRun).filter(PipelineRun.id == run_id).first()
@@ -46,7 +50,6 @@ async def stream_pipeline_progress(run_id: str, db: Session = Depends(get_db)):
         try:
             config_list = run.config.get("steps", [])
             async for genblaze_event in genblaze_service.execute_pipeline(run.id, run.prompt, config_list):
-                # The SDK events can be serialized. They usually have a `.type` and are Pydantic models.
                 event_name = getattr(genblaze_event, "type", getattr(genblaze_event, "__class__", type(genblaze_event)).__name__)
                 if hasattr(genblaze_event, "model_dump_json"):
                     data = genblaze_event.model_dump_json()
@@ -59,7 +62,14 @@ async def stream_pipeline_progress(run_id: str, db: Session = Depends(get_db)):
                         data = json.dumps(str(genblaze_event))
                 
                 yield dict(event=event_name, data=data)
+
+            # Mark COMPLETED in DB upon successful stream end
+            run.status = "COMPLETED"
+            db.commit()
+            yield dict(event="pipeline.completed", data=json.dumps({"status": "COMPLETED", "run_id": run.id}))
         except Exception as e:
+            run.status = "FAILED"
+            db.commit()
             yield dict(event="error", data=json.dumps({"detail": str(e)}))
 
     return EventSourceResponse(sse_generator())
