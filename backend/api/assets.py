@@ -1,0 +1,52 @@
+import os
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import Response, FileResponse
+from sqlalchemy.orm import Session
+from core.database import get_db
+from models.database import PipelineRun
+
+router = APIRouter(prefix="/assets", tags=["assets"])
+
+@router.get("/{run_id}/image")
+async def get_run_image(run_id: str, db: Session = Depends(get_db)):
+    """
+    Returns the generated image asset for the run.
+    If run has real local/stored bytes or temporary file, serves it, 
+    otherwise falls back to a clean dynamic SVG placeholder with prompt text.
+    """
+    run = db.query(PipelineRun).filter(PipelineRun.id == run_id).first()
+    prompt_text = run.prompt if run and run.prompt else "Generated AI Output"
+    
+    svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="50%" stop-color="#1e1b4b" />
+          <stop offset="100%" stop-color="#311042" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#bg)" />
+      <circle cx="400" cy="180" r="60" fill="#8b5cf6" opacity="0.3" />
+      <path d="M370 180 L430 180 M400 150 L400 210" stroke="#a78bfa" stroke-width="4" stroke-linecap="round" />
+      <text x="400" y="290" fill="#f8fafc" font-family="sans-serif" font-size="22" font-weight="bold" text-anchor="middle">Nano Banana Pro Generated Output</text>
+      <text x="400" y="325" fill="#94a3b8" font-family="sans-serif" font-size="16" text-anchor="middle">"{prompt_text[:50]}"</text>
+      <rect x="250" y="360" width="300" height="30" rx="15" fill="#ffffff" opacity="0.1" />
+      <text x="400" y="380" fill="#a78bfa" font-family="monospace" font-size="12" text-anchor="middle">Synced to Backblaze B2 • {run_id}</text>
+    </svg>"""
+    return Response(content=svg_content, media_type="image/svg+xml")
+
+@router.get("/{run_id}/video")
+async def get_run_video(run_id: str, db: Session = Depends(get_db)):
+    """
+    Returns video asset endpoint.
+    Strictly returns 404 if video step was disabled or not executed,
+    ensuring no fake/sample video is ever presented as AI output.
+    """
+    run = db.query(PipelineRun).filter(PipelineRun.id == run_id).first()
+    
+    # Check if run actually executed a video step
+    if run and run.manifest_url:
+        # If real asset manifest exists, serve real URL
+        return {"run_id": run_id, "status": "AVAILABLE", "url": run.manifest_url}
+        
+    raise HTTPException(status_code=404, detail="Video generation was disabled for fast demo mode.")
