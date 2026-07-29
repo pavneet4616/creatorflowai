@@ -37,8 +37,11 @@ class GoogleProvider(SyncProvider):
         start_time_ts = time.time()
         start_iso = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
         
-        if not self._api_key:
-            logger.info("Using DEMO mode (Mock Output) for generation.")
+        # Fallback to DEMO mode if the key is missing or not a valid Google API key (starts with AIza)
+        is_demo_mode = not self._api_key or not self._api_key.startswith("AIza")
+        
+        if is_demo_mode:
+            logger.info(f"Using DEMO mode (Mock Output) for generation. API Key valid: {not is_demo_mode}")
             time.sleep(3) # Simulate generation time
             
             # Create a mock file
