@@ -1,13 +1,19 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
-  
-  # Allow direct access to existing files and directories
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+
+  # Redirect to remove trailing slashes (Next.js static export preference)
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+  # If an existing asset or directory is requested, serve it
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
   RewriteRule ^ - [L]
 
-  # Route requests without .html extension to .html file if it exists
-  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  # Try to serve the corresponding .html file for the requested route
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}.html -f
   RewriteRule ^(.*)$ $1.html [L]
+
+  # Fallback to index.html for client-side routing (if applicable)
+  RewriteRule ^ index.html [L]
 </IfModule>
