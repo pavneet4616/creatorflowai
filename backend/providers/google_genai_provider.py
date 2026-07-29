@@ -25,7 +25,10 @@ class GoogleProvider(SyncProvider):
     def __init__(self, api_key: str | None = None, event_callback=None):
         super().__init__()
         self._api_key = api_key or os.getenv("GOOGLE_API_KEY")
-        self._client = genai.Client(api_key=self._api_key)
+        if self._api_key:
+            self._client = genai.Client(api_key=self._api_key)
+        else:
+            self._client = None
         self.event_callback = event_callback
 
     def generate(self, step: Step, config: Any = None) -> Step:
@@ -34,14 +37,36 @@ class GoogleProvider(SyncProvider):
         start_time_ts = time.time()
         start_iso = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
         
-        # 1. Route to the correct request builder
-        if step.modality == Modality.IMAGE:
-            response = self._build_and_execute_image(step)
-        elif step.modality == Modality.VIDEO:
-            response = self._build_and_execute_video(step)
+        if not self._api_key:
+            logger.info("Using DEMO mode (Mock Output) for generation.")
+            time.sleep(3) # Simulate generation time
+            
+            # Create a mock file
+            suffix = ".png" if step.modality == Modality.IMAGE else ".mp4" if step.modality == Modality.VIDEO else ".txt"
+            fd, tmp = tempfile.mkstemp(suffix=suffix)
+            mock_data = b"MOCK_GENERATED_DATA"
+            os.write(fd, mock_data)
+            os.close(fd)
+            
+            from pathlib import Path
+            file_url = local_file_url(Path(tmp).resolve())
+            mime_type = "image/png" if step.modality == Modality.IMAGE else "video/mp4" if step.modality == Modality.VIDEO else "text/plain"
+            
+            asset = Asset(url=file_url, media_type=mime_type, size_bytes=len(mock_data))
+            assets = [asset]
+            
+            if self.event_callback and step.modality == Modality.VIDEO:
+                self.event_callback("video.poll", {"elapsed": 1, "operation": "mock_op"})
         else:
-            # Fallback for LLM planning if needed
-            response = self._build_and_execute_text(step)
+            # 1. Route to the correct request builder
+            if step.modality == Modality.IMAGE:
+                response = self._build_and_execute_image(step)
+            elif step.modality == Modality.VIDEO:
+                response = self._build_and_execute_video(step)
+            else:
+                # Fallback for LLM planning if needed
+                response = self._build_and_execute_text(step)
+            assets = self._parse_response(response, step)
             
         latency_ms = int((time.time() - start_time_ts) * 1000)
         end_iso = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
