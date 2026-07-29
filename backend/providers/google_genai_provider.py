@@ -31,7 +31,7 @@ class GoogleProvider(SyncProvider):
         """Execute the generation synchronously."""
         logger.info(f"[{step.modality.name.title()}] Model={step.model} Started")
         start_time_ts = time.time()
-        start_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        start_iso = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
         
         # 1. Route to the correct request builder
         if step.modality == Modality.IMAGE:
@@ -43,7 +43,7 @@ class GoogleProvider(SyncProvider):
             response = self._build_and_execute_text(step)
             
         latency_ms = int((time.time() - start_time_ts) * 1000)
-        end_iso = datetime.datetime.utcnow().isoformat() + "Z"
+        end_iso = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
         
         logger.info(f"[{step.modality.name.title()}] Completed {latency_ms/1000:.1f} sec")
 
