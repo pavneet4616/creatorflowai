@@ -38,10 +38,10 @@ async def log_requests(request, call_next):
     return response
 
 # Include Routers
-app.include_router(projects.router, prefix=settings.API_V1_STR)
-app.include_router(pipelines.router, prefix=settings.API_V1_STR)
-app.include_router(manifests.router, prefix=settings.API_V1_STR)
-app.include_router(assets.router, prefix=settings.API_V1_STR)
+app.include_router(projects_router, prefix=settings.API_V1_STR)
+app.include_router(pipelines_router, prefix=settings.API_V1_STR)
+app.include_router(manifests_router, prefix=settings.API_V1_STR)
+app.include_router(assets_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def read_root():
