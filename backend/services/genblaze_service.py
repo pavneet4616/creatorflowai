@@ -11,7 +11,13 @@ class GenblazeService:
     def _build_sink(self) -> ObjectStorageSink:
         # The S3StorageBackend for Backblaze B2 automatically picks up region from bucket auto-detect
         # It natively reads B2_BUCKET, B2_REGION, B2_KEY_ID, B2_APP_KEY
-        backend = S3StorageBackend.for_backblaze(preflight=False)
+        backend = S3StorageBackend.for_backblaze(
+            bucket=settings.B2_BUCKET,
+            region=settings.B2_REGION,
+            key_id=settings.B2_KEY_ID,
+            app_key=settings.B2_APP_KEY,
+            preflight=False
+        )
         return ObjectStorageSink(backend, key_strategy=KeyStrategy.HIERARCHICAL)
 
     async def execute_pipeline(self, run_id: str, prompt: str, config: list, event_callback=None) -> AsyncGenerator:
