@@ -70,13 +70,14 @@ export default function NewProjectPage() {
         const runData = await runRes.json();
         router.push(`/project?id=${runData.id}`);
       } else {
-        const mockRunId = "run-" + Math.random().toString(36).substr(2, 9);
-        router.push(`/project?id=${mockRunId}`);
+        const errorData = await runRes.json().catch(() => ({}));
+        alert(`Failed to start pipeline: ${errorData.detail || runRes.statusText}`);
+        setIsSubmitting(false);
       }
     } catch (err) {
-      console.error("Backend error, redirecting:", err);
-      const mockRunId = "run-" + Math.random().toString(36).substr(2, 9);
-      router.push(`/project?id=${mockRunId}`);
+      console.error("Backend error:", err);
+      alert("Failed to connect to the backend server.");
+      setIsSubmitting(false);
     }
   };
 

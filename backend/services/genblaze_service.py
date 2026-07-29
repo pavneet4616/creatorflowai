@@ -14,7 +14,7 @@ class GenblazeService:
         backend = S3StorageBackend.for_backblaze(preflight=False)
         return ObjectStorageSink(backend, key_strategy=KeyStrategy.HIERARCHICAL)
 
-    async def execute_pipeline(self, run_id: str, prompt: str, config: list) -> AsyncGenerator:
+    async def execute_pipeline(self, run_id: str, prompt: str, config: list, event_callback=None) -> AsyncGenerator:
         pipeline = Pipeline(run_id)
 
         for step_cfg in config:
@@ -27,7 +27,7 @@ class GenblazeService:
             if step_type == "image":
                 model_id = "nano-banana-pro-preview" if ("banana" in raw_model or "nano" in raw_model or not raw_model) else step_cfg.get("model")
                 pipeline = pipeline.step(
-                    provider=GoogleProvider(api_key=settings.GOOGLE_API_KEY),
+                    provider=GoogleProvider(api_key=settings.GOOGLE_API_KEY, event_callback=event_callback),
                     model=model_id,
                     prompt=prompt,
                     modality=Modality.IMAGE
@@ -35,7 +35,7 @@ class GenblazeService:
             elif step_type == "video":
                 model_id = "veo-3.1-generate-preview" if ("veo" in raw_model or not raw_model) else step_cfg.get("model")
                 pipeline = pipeline.step(
-                    provider=GoogleProvider(api_key=settings.GOOGLE_API_KEY),
+                    provider=GoogleProvider(api_key=settings.GOOGLE_API_KEY, event_callback=event_callback),
                     model=model_id,
                     prompt=prompt,
                     modality=Modality.VIDEO

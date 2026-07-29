@@ -86,9 +86,20 @@ function PipelineInspector() {
     es.addEventListener("step.failed", (e) => {
       try {
         const data = JSON.parse(e.data);
-        addLog(`❌ Step failed: ${data.error || 'Unknown error'}`);
+        addLog(`❌ Step failed: ${data.error || data.detail || 'Unknown error'}`);
       } catch {
         addLog(`❌ Step failed.`);
+      }
+      setStatus("FAILED");
+      es.close();
+    });
+
+    es.addEventListener("pipeline.failed", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        addLog(`❌ Pipeline failed: ${data.detail || 'Unknown error'}`);
+      } catch {
+        addLog(`❌ Pipeline failed.`);
       }
       setStatus("FAILED");
       es.close();
@@ -103,9 +114,8 @@ function PipelineInspector() {
 
     es.addEventListener("error", (e) => {
       console.error("SSE Error:", e);
-      addLog("Stream connection closed or pipeline completed.");
-      setStatus(prev => prev === "IN_PROGRESS" ? "COMPLETED" : prev);
-      setCurrentStep(steps.length);
+      addLog("Stream connection closed or error occurred.");
+      setStatus(prev => prev === "IN_PROGRESS" ? "FAILED" : prev);
       es.close();
     });
 
@@ -130,13 +140,19 @@ function PipelineInspector() {
             return (
               <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 bg-background shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow transition-colors ${
-                  step.skipped ? "border-zinc-700 bg-zinc-800/40" : isCompleted ? "border-green-500 bg-green-500/10" : isActive ? "border-violet-500 bg-violet-500/20 glow-active animate-pulse" : "border-zinc-800"
+                  step.skipped ? "border-zinc-700 bg-zinc-800/40" 
+                  : (isActive && status === "FAILED") ? "border-red-500 bg-red-500/10"
+                  : isCompleted ? "border-green-500 bg-green-500/10" 
+                  : (isActive && status === "IN_PROGRESS") ? "border-violet-500 bg-violet-500/20 glow-active animate-pulse" 
+                  : "border-zinc-800"
                 }`}>
                   {step.skipped ? (
                     <span className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                  ) : (isActive && status === "FAILED") ? (
+                    <span className="w-5 h-5 text-red-500 flex items-center justify-center font-bold">X</span>
                   ) : isCompleted ? (
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  ) : isActive ? (
+                  ) : (isActive && status === "IN_PROGRESS") ? (
                     <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
                   ) : (
                     <Circle className="w-5 h-5 text-zinc-700" />
@@ -147,10 +163,16 @@ function PipelineInspector() {
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-lg">{step.title}</h3>
                     {step.skipped ? (
-                      <Badge variant="outline" className="text-zinc-400 border-zinc-700">Skipped</Badge>
+                      <Badge variant="outline" className="text-zinc-400 border-zinc-700">⚪ Skipped</Badge>
+                    ) : (isActive && status === "FAILED") ? (
+                      <Badge variant="destructive" className="bg-red-500/20 text-red-300 border-red-500/50">🔴 Failed</Badge>
                     ) : isCompleted ? (
-                      <Badge variant="secondary" className="bg-green-500/20 text-green-300">Done</Badge>
-                    ) : null}
+                      <Badge variant="secondary" className="bg-green-500/20 text-green-300">🟢 Completed</Badge>
+                    ) : (isActive && status === "IN_PROGRESS") ? (
+                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-300 border-yellow-500/50">🟡 Running</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-zinc-400 border-zinc-700">⚪ Queued</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground font-mono">{step.model}</p>
                 </Card>
