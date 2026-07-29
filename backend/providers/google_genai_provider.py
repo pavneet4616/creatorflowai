@@ -135,7 +135,7 @@ class GoogleProvider(SyncProvider):
             if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
                 for part in candidate.content.parts:
                     if getattr(part, 'inline_data', None):
-                        mime = part.inline_data.mime_type
+                        mime = getattr(part.inline_data, 'mime_type', None) or "image/png"
                         data = part.inline_data.data
                         suffix = ".jpeg" if "jpeg" in mime else ".png"
                         fd, tmp = tempfile.mkstemp(suffix=suffix)
