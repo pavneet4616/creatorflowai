@@ -174,7 +174,7 @@ class GoogleProvider(SyncProvider):
                         logger.warning(f"Failed to download using client.files.download: {e}")
                         raise ValueError(f"Could not download video asset: {e}")
                         
-                    mime = getattr(video.video, 'mime_type', 'video/mp4')
+                    mime = getattr(video.video, 'mime_type', None) or 'video/mp4'
                     fd, tmp = tempfile.mkstemp(suffix=".mp4")
                     os.write(fd, video_bytes)
                     os.close(fd)
